@@ -40,7 +40,11 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         TIMESTAMP("timeStamp"), PROGRAM("program"), PROGVERSION("Version"), DATAORIGIN("dataOrigin"),
         AUTHOR("author"), KEYWORDMAP("keywordMap"), KEYWORDLEVEL("keywordLevel"), 
         EXTERNAL("external"), TECHNOLOGY("technology"), NUMBERDEFINITION("numberDefinition"),
-        CELL("cell"), CELLTYPE("cellType"), GENERIC("GENERIC"), TIE("TIE"), RIPPER("RIPPER")
+        CELL("cell"), CELLTYPE("cellType"), GENERIC("GENERIC"), TIE("TIE"), RIPPER("RIPPER"), VIEW("view"), 
+        VIEWTYPE("viewType"), BEHAVIOR("BEHAVIOR"), DOCUMENT("DOCUMENT"), GRAPHIC("GRAPHIC"), LOGICMODEL("LOGICMODEL"), 
+        MASKLAYOUT("MASKLAYOUT"), NETLIST("NETLIST"), PCBLAYOUT("PCBLAYOUT"), SCHEMATIC("SCHEMATIC"), 
+        STRANGER("STRANGER"), SYMBOLIC("SYMBOLIC"), INTERFACE("interface"), PORT("port"), DIRECTION("direction"),
+        INPUT("INPUT"), OUTPUT("OUTPUT"), INOUT("INOUT") 
         {
             using namespace phoenix;
             LEFT_BRACE  =   ch_p('{') [PrintChar()];
@@ -86,7 +90,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> SPACE
                     >> PROGVERSION [PrintTag()]
                     >> SPACE
-                    >> any_string
+                    >> any_string [PrintStr()]
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
@@ -175,6 +179,10 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
 
             celltypesec_name
                     = GENERIC|TIE|RIPPER;
+ 
+            viewtype_name
+                    = BEHAVIOR|DOCUMENT|GRAPHIC|LOGICMODEL|MASKLAYOUT
+                      |NETLIST|PCBLAYOUT|SCHEMATIC|STRANGER|SYMBOLIC;
 
             alnum_name
                 = *alnum_p
@@ -208,6 +216,65 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> RIGHT_PARAN
                     ;
 
+            viewtype_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> VIEWTYPE [PrintTag()]
+                    >> SPACE
+                    >> viewtype_name [PrintStr()]
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+    
+            direction_str
+                = INPUT | OUTPUT | INOUT ;
+
+            direction_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> DIRECTION [PrintTag()]
+                    >> SPACE
+                    >> direction_str [PrintStr()]
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+
+            port_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> PORT [PrintTag()]
+                    >> SPACE
+                    >> section_name [PrintStr()]
+                    >> SPACE
+                    >> direction_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+            
+            interface_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> INTERFACE [PrintTag()]
+                    >> *(SPACE >> port_section)
+                    >> SPACE
+                    >> RIGHT_PARAN;
+                    
+
+            view_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> VIEW [PrintTag()]
+                    >> SPACE
+                    >> section_name [PrintStr()]
+                    >> SPACE
+                    >> viewtype_section
+                    >> SPACE
+                    >> interface_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+                    
+
             cell_section
                 = LEFT_PARAN
                     >> SPACE
@@ -217,12 +284,11 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> SPACE
                     >> celltype_section
                     >> SPACE
+                    >> view_section
+                    >> SPACE
                     >> RIGHT_PARAN
                     ;
             
-            listof_cells
-                =   cell_section  
-                    ;          
 
             external_section
                 = LEFT_PARAN
@@ -265,6 +331,11 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         strlit<> EDIF, EDIFVERSION, EDIFLEVEL, STATUS, WRITTEN, TIMESTAMP, PROGRAM, PROGVERSION,
                   DATAORIGIN, AUTHOR, KEYWORDMAP, KEYWORDLEVEL, EXTERNAL, TECHNOLOGY, NUMBERDEFINITION,
                   CELL, CELLTYPE, GENERIC, TIE, RIPPER;
+        
+        strlit<> VIEW, VIEWTYPE, BEHAVIOR, DOCUMENT, GRAPHIC, LOGICMODEL, MASKLAYOUT,
+                 NETLIST, PCBLAYOUT, SCHEMATIC, STRANGER, SYMBOLIC;
+        
+        strlit<> INTERFACE, PORT, DIRECTION, INPUT, OUTPUT, INOUT;
 
         rule<ScannerT>  top;
 
@@ -276,7 +347,8 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                 numberdefinition_section;
 
         rule<ScannerT>
-                cell_section, celltype_section, listof_cells, celltypesec_name;
+                cell_section, celltype_section, celltypesec_name, view_section, viewtype_section,
+                viewtype_name, interface_section, port_section, direction_section, direction_str;
  
         rule<ScannerT>
                any_string, string_val, alnum_name; 
