@@ -1,0 +1,8 @@
+(edif sumanish (edifVersion 2 0 0) (edifLevel 0)
+ (status
+  (written (timeStamp 2001 11 14 13 3 27)
+   (program "vim" (Version "6.0"))
+   (dataOrigin "moxon design") (author "tom moxon")
+  )
+ )
+)
