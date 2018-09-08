@@ -39,7 +39,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         EDIFVERSION("edifVersion"), EDIFLEVEL("edifLevel"), STATUS("status"), WRITTEN("written"),
         TIMESTAMP("timeStamp"), PROGRAM("program"), PROGVERSION("Version"), DATAORIGIN("dataOrigin"),
         AUTHOR("author"), KEYWORDMAP("keywordMap"), KEYWORDLEVEL("keywordLevel"), 
-        LOGIC_HEIGHT("LOGIC_HEIGHT"), FOR("for"), LOCATION("location")
+        EXTERNAL("external"), TECHNOLOGY("technology"), NUMBERDEFINITION("numberDefinition")
         {
             using namespace phoenix;
             LEFT_BRACE  =   ch_p('{') [PrintChar()];
@@ -184,15 +184,47 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> RIGHT_PARAN
                     ;
 
-            edif_name 
+            section_name 
                 =   *(anychar_p - space_p)
                     ;
+
+            numberdefinition_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> NUMBERDEFINITION [PrintTag()]
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+
+            technolgy_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> TECHNOLOGY [PrintTag()]
+                    >> SPACE
+                    >> numberdefinition_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+            
+            external_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> EXTERNAL [PrintTag()]
+                    >> SPACE
+                    >> section_name [PrintStr()]
+                    >> SPACE 
+                    >> ediflevel_section
+                    >> SPACE
+                    >> technolgy_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ; 
             
             edif_section
                 =   LEFT_PARAN
                     >> EDIF	[PrintTag()] 
 					>> SPACE 
-					>> edif_name [PrintStr()]
+					>> section_name [PrintStr()]
                     >> SPACE 
 					>> edifversion_section
                     >> SPACE
@@ -201,6 +233,8 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> keyword_section
                     >> SPACE
                     >> status_section
+                    >> SPACE
+                    >> external_section
                     >> SPACE 
 					>> RIGHT_PARAN
                     ;
@@ -210,15 +244,16 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         }
 
         strlit<> EDIF, EDIFVERSION, EDIFLEVEL, STATUS, WRITTEN, TIMESTAMP, PROGRAM, PROGVERSION,
-                  DATAORIGIN, AUTHOR, KEYWORDMAP, KEYWORDLEVEL, LOGIC_HEIGHT, FOR, LOCATION;
+                  DATAORIGIN, AUTHOR, KEYWORDMAP, KEYWORDLEVEL, EXTERNAL, TECHNOLOGY, NUMBERDEFINITION;
 
         rule<ScannerT>  top;
 
         rule<ScannerT> 
-                space, edif_name, edif_section, edifversion_section,
+                space, section_name, edif_section, edifversion_section,
                 ediflevel_section, status_section, written_section, timestamp_section,
                 program_section, programversion_section, dataorigin_setion, author_section, 
-                keyword_section, keywordlevel_section;
+                keyword_section, keywordlevel_section, external_section, technolgy_section,
+                numberdefinition_section;
  
         rule<ScannerT>
                any_string, string_val; 
@@ -254,12 +289,13 @@ EDIFReader::Read(string fileName)
         std::cout << "Parsing Done...." << std::endl;
         return true;
     }  else {
+        std::cout << "Parsing Error:";
         for (int i = 0; i < 50; i++)
         {
             if (result.stop == end) {
                 break;
             }
-            std::cout << "Parsing error:" << *result.stop++;
+            std::cout << *result.stop++;
         }
         //std::cout << endl;
         return false;

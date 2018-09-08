@@ -6,4 +6,6 @@
    (dataOrigin "moxon design") (author "tom moxon")
   )
  )
+ (external generic_gates (edifLevel 0) (technology (numberDefinition))
+ )
 )

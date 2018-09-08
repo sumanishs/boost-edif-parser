@@ -15,4 +15,4 @@ Parse: $(OBJS)
 	$(CC) -o $@ $^ $(CFLAGS) $(LPATHS) $(LFLAGS)
 
 clean:
-	rm -f *.o Parse
+	rm -f *.o *.log Parse
