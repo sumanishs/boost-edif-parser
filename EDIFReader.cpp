@@ -47,7 +47,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         INPUT("INPUT"), OUTPUT("OUTPUT"), INOUT("INOUT"), CONTENTS("contents"), INSTANCE("instance"), 
         VIEWREF("viewRef"), CELLREF("cellRef"), LIBRARYREF("libraryRef"),
         NET("net"), JOINED("joined"), MUSTJOIN("mustjoin"), CRITICALSIGNAL("criticalsignal"),
-        PORTREF("portRef"), INSTANCEREF("instanceRef"), LIBRARY("library") 
+        PORTREF("portRef"), INSTANCEREF("instanceRef"), LIBRARY("library"), DESIGN("design") 
         {
             using namespace phoenix;
             LEFT_BRACE  =   ch_p('{') [PrintChar()];
@@ -450,7 +450,19 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
-                     
+
+            design_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> DESIGN [PrintTag()]
+                    >> SPACE
+                    >> only_string [PrintStr()]
+                    >> SPACE
+                    >> cellref_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+                                         
             
             edif_section
                 =   LEFT_PARAN
@@ -469,6 +481,8 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> external_section
                     >> SPACE
                     >> library_section
+                    >> SPACE
+                    >> design_section
                     >> SPACE 
 					>> RIGHT_PARAN
                     ;
@@ -489,7 +503,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         strlit<> CONTENTS, INSTANCE, VIEWREF, CELLREF, LIBRARYREF,
                  NET, JOINED, MUSTJOIN, CRITICALSIGNAL, PORTREF, INSTANCEREF;
 
-        strlit<> LIBRARY;
+        strlit<> LIBRARY, DESIGN;
 
         rule<ScannerT>  top;
 
@@ -508,7 +522,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         rule<ScannerT>
                 libraryref_section, net_section, routing_section, connections,
                 connection_type, module_port_ref, instance_con, module_port, instanceref_section,
-                library_section;
+                library_section, design_section;
  
         rule<ScannerT>
                any_string, string_val, alnum_name, string_without_right_paran,
