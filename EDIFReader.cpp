@@ -38,7 +38,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         definition(edif_grammar const& self ) : EDIF("edif"),
         EDIFVERSION("edifVersion"), EDIFLEVEL("edifLevel"), STATUS("status"), WRITTEN("written"),
         TIMESTAMP("timeStamp"), PROGRAM("program"), PROGVERSION("Version"), DATAORIGIN("dataOrigin"),
-        AUTHOR("author"), INT("int"), LOGIC_WIDTH("LOGIC_WIDTH"), 
+        AUTHOR("author"), KEYWORDMAP("keywordMap"), KEYWORDLEVEL("keywordLevel"), 
         LOGIC_HEIGHT("LOGIC_HEIGHT"), FOR("for"), LOCATION("location")
         {
             using namespace phoenix;
@@ -95,7 +95,48 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
-                    
+                  
+            programversion_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> PROGVERSION [PrintTag()]
+                    >> SPACE
+                    >> any_string
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+ 
+            program_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> PROGRAM [PrintTag()]
+                    >> SPACE
+                    >> any_string
+                    >> SPACE
+                    >> programversion_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+
+            dataorigin_setion
+                = LEFT_PARAN
+                    >> SPACE
+                    >> DATAORIGIN [PrintTag()]
+                    >> SPACE
+                    >> any_string
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ; 
+    
+            author_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> AUTHOR [PrintTag()]
+                    >> SPACE
+                    >> any_string
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;       
 
             written_section
                 = LEFT_PARAN
@@ -112,6 +153,26 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
+
+            keywordlevel_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> KEYWORDLEVEL [PrintTag()]
+                    >> SPACE
+                    >> int_p [PrintInteger()]
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+
+            keyword_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> KEYWORDMAP [PrintTag()]
+                    >> SPACE
+                    >> keywordlevel_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
     
             status_section
                 =  LEFT_PARAN
@@ -119,6 +180,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> STATUS [PrintTag()]
                     >> SPACE 
                     >> written_section
+                    >> SPACE
                     >> RIGHT_PARAN
                     ;
 
@@ -136,6 +198,8 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> SPACE
                     >> ediflevel_section
                     >> SPACE
+                    >> keyword_section
+                    >> SPACE
                     >> status_section
                     >> SPACE 
 					>> RIGHT_PARAN
@@ -146,14 +210,15 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         }
 
         strlit<> EDIF, EDIFVERSION, EDIFLEVEL, STATUS, WRITTEN, TIMESTAMP, PROGRAM, PROGVERSION,
-                  DATAORIGIN, AUTHOR, INT, LOGIC_WIDTH, LOGIC_HEIGHT, FOR, LOCATION;
+                  DATAORIGIN, AUTHOR, KEYWORDMAP, KEYWORDLEVEL, LOGIC_HEIGHT, FOR, LOCATION;
 
         rule<ScannerT>  top;
 
         rule<ScannerT> 
                 space, edif_name, edif_section, edifversion_section,
                 ediflevel_section, status_section, written_section, timestamp_section,
-                program_section, programversion_section, dataorigin_setion, author_section;
+                program_section, programversion_section, dataorigin_setion, author_section, 
+                keyword_section, keywordlevel_section;
  
         rule<ScannerT>
                any_string, string_val; 
