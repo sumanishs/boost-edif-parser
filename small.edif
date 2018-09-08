@@ -7,5 +7,8 @@
   )
  )
  (external generic_gates (edifLevel 0) (technology (numberDefinition))
+  (cell an01d1 (cellType GENERIC))
+  (cell an02d2 (cellType GENERIC))
+  (cell an03d3 (cellType GENERIC))
  )
 )

@@ -39,7 +39,8 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         EDIFVERSION("edifVersion"), EDIFLEVEL("edifLevel"), STATUS("status"), WRITTEN("written"),
         TIMESTAMP("timeStamp"), PROGRAM("program"), PROGVERSION("Version"), DATAORIGIN("dataOrigin"),
         AUTHOR("author"), KEYWORDMAP("keywordMap"), KEYWORDLEVEL("keywordLevel"), 
-        EXTERNAL("external"), TECHNOLOGY("technology"), NUMBERDEFINITION("numberDefinition")
+        EXTERNAL("external"), TECHNOLOGY("technology"), NUMBERDEFINITION("numberDefinition"),
+        CELL("cell"), CELLTYPE("cellType"), GENERIC("GENERIC"), TIE("TIE"), RIPPER("RIPPER")
         {
             using namespace phoenix;
             LEFT_BRACE  =   ch_p('{') [PrintChar()];
@@ -57,12 +58,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
             edifversion_section
                 = LEFT_PARAN
                   >> EDIFVERSION [PrintTag()]
-                  >> SPACE
-                  >> int_p [PrintInteger()] 
-                  >> SPACE
-                  >> int_p [PrintInteger()]
-                  >> SPACE
-                  >> int_p [PrintInteger()]
+                  >> *(SPACE >> int_p [PrintInteger()])
                   >> RIGHT_PARAN
                   ;   
 
@@ -80,18 +76,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                 = LEFT_PARAN
                     >> SPACE
                     >> TIMESTAMP [PrintTag()]
-                    >> SPACE
-                    >> int_p [PrintInteger()]
-                    >> SPACE
-                    >> int_p [PrintInteger()]
-                    >> SPACE
-                    >> int_p [PrintInteger()]
-                    >> SPACE
-                    >> int_p [PrintInteger()]
-                    >> SPACE
-                    >> int_p [PrintInteger()]
-                    >> SPACE
-                    >> int_p [PrintInteger()]
+                    >> *(SPACE >> int_p [PrintInteger()])
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
@@ -188,6 +173,13 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                 =   *(anychar_p - space_p)
                     ;
 
+            celltypesec_name
+                    = GENERIC|TIE|RIPPER;
+
+            alnum_name
+                = *alnum_p
+                    ;
+
             numberdefinition_section
                 = LEFT_PARAN
                     >> SPACE
@@ -205,7 +197,33 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
+    
+            celltype_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> CELLTYPE [PrintTag()]
+                    >> SPACE
+                    >> celltypesec_name [PrintStr()]
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+
+            cell_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> CELL [PrintTag()]
+                    >> SPACE
+                    >> section_name [PrintStr()]
+                    >> SPACE
+                    >> celltype_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
             
+            listof_cells
+                =   cell_section  
+                    ;          
+
             external_section
                 = LEFT_PARAN
                     >> SPACE
@@ -216,6 +234,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> ediflevel_section
                     >> SPACE
                     >> technolgy_section
+                    >> *(SPACE >> cell_section)
                     >> SPACE
                     >> RIGHT_PARAN
                     ; 
@@ -244,7 +263,8 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         }
 
         strlit<> EDIF, EDIFVERSION, EDIFLEVEL, STATUS, WRITTEN, TIMESTAMP, PROGRAM, PROGVERSION,
-                  DATAORIGIN, AUTHOR, KEYWORDMAP, KEYWORDLEVEL, EXTERNAL, TECHNOLOGY, NUMBERDEFINITION;
+                  DATAORIGIN, AUTHOR, KEYWORDMAP, KEYWORDLEVEL, EXTERNAL, TECHNOLOGY, NUMBERDEFINITION,
+                  CELL, CELLTYPE, GENERIC, TIE, RIPPER;
 
         rule<ScannerT>  top;
 
@@ -254,9 +274,12 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                 program_section, programversion_section, dataorigin_setion, author_section, 
                 keyword_section, keywordlevel_section, external_section, technolgy_section,
                 numberdefinition_section;
+
+        rule<ScannerT>
+                cell_section, celltype_section, listof_cells, celltypesec_name;
  
         rule<ScannerT>
-               any_string, string_val; 
+               any_string, string_val, alnum_name; 
         
         rule<ScannerT> SPACE, LEFT_BRACE, RIGHT_BRACE, LEFT_PARAN, RIGHT_PARAN;
         rule<ScannerT> const&
@@ -280,6 +303,8 @@ EDIFReader::Read(string fileName)
     ConstCharIter end = vec.end();
 
     skip_grammar skip;
+    string to_parse(start, end);
+    std::cout << "String to parse:" << std::endl << to_parse << std::endl;
     
     parse_info<vector<char>::const_iterator> result = parse(start, end, g, skip);
 
