@@ -7,27 +7,6 @@
   )
  )
  (external generic_gates (edifLevel 0) (technology (numberDefinition))
-  //Cell Start  
-  (cell an01d1 (cellType GENERIC)
-   (view Netlist_representation (viewType NETLIST)
-    (interface 
-     (port A1 (direction INPUT)) 
-     (port A2 (direction INPUT))
-     (port Z  (direction OUTPUT))
-    )
-   )
-  )
-  
-  (cell xo02d1 (cellType GENERIC)
-   (view Netlist_representation (viewType NETLIST)
-    (interface 
-     (port A1 (direction INPUT)) 
-     (port A2 (direction INPUT))
-     (port Z  (direction OUTPUT))
-    )
-   )
-  )
-
   (cell or03d1 (cellType GENERIC)
    (view Netlist_representation (viewType NETLIST)
     (interface 
@@ -36,8 +15,39 @@
      (port A3 (direction INPUT))
      (port Z  (direction OUTPUT))
     )
+    (contents
+     
+    (instance U1
+      (viewRef Netlist_representation 
+       (cellRef xo02d1 (libraryRef generic_gates))
+      )
+     )
+
+     (instance U2
+      (viewRef Netlist_representation 
+       (cellRef xo02d1 (libraryRef generic_gates))
+      )
+     )
+
+     (net A
+       (joined 
+        (portRef A) 
+        (portRef B) 
+        (portRef A1 (instanceRef U1))
+        (portRef A1 (instanceRef U3))
+        (portRef A1 (instanceRef U4))
+       )
+     )
+     
+     (net NET1
+       (joined 
+        (portRef Z (instanceRef U1))
+        (portRef A1 (instanceRef U2))
+       )
+     )
+     
+    )
    )
   )
-
  )
 )

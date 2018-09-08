@@ -143,11 +143,15 @@
      )
 
      (net S
-      (joined (portRef S) (portRef Z (instanceRef U2)))
+      (joined 
+        (portRef S) 
+        (portRef Z (instanceRef U2)))
      )
 
      (net CO
-      (joined (portRef CO) (portRef Z (instanceRef U6)))
+      (joined 
+        (portRef CO) 
+        (portRef Z (instanceRef U6)))
      )
 
     )

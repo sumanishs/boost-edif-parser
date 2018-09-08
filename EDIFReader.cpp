@@ -44,7 +44,10 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         VIEWTYPE("viewType"), BEHAVIOR("BEHAVIOR"), DOCUMENT("DOCUMENT"), GRAPHIC("GRAPHIC"), LOGICMODEL("LOGICMODEL"), 
         MASKLAYOUT("MASKLAYOUT"), NETLIST("NETLIST"), PCBLAYOUT("PCBLAYOUT"), SCHEMATIC("SCHEMATIC"), 
         STRANGER("STRANGER"), SYMBOLIC("SYMBOLIC"), INTERFACE("interface"), PORT("port"), DIRECTION("direction"),
-        INPUT("INPUT"), OUTPUT("OUTPUT"), INOUT("INOUT") 
+        INPUT("INPUT"), OUTPUT("OUTPUT"), INOUT("INOUT"), CONTENTS("contents"), INSTANCE("instance"), 
+        VIEWREF("viewRef"), CELLREF("cellRef"), LIBRARYREF("libraryRef"),
+        NET("net"), JOINED("joined"), MUSTJOIN("mustjoin"), CRITICALSIGNAL("criticalsignal"),
+        PORTREF("portRef"), INSTANCEREF("instanceRef") 
         {
             using namespace phoenix;
             LEFT_BRACE  =   ch_p('{') [PrintChar()];
@@ -174,7 +177,15 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     ;
 
             section_name 
-                =   *(anychar_p - space_p)
+                = *(anychar_p - space_p)
+                    ;
+
+            string_without_right_paran
+                = *(anychar_p - ch_p(')'))
+                    ;
+            
+            only_string
+                = *(anychar_p - ch_p(')') - space_p)
                     ;
 
             celltypesec_name
@@ -258,7 +269,124 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> *(SPACE >> port_section)
                     >> SPACE
                     >> RIGHT_PARAN;
+
+            libraryref_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> LIBRARYREF [PrintTag()]
+                    >> SPACE
+                    >> string_without_right_paran [PrintStr()]
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
                     
+            cellref_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> CELLREF [PrintTag()]
+                    >> SPACE
+                    >> section_name [PrintStr()]
+                    >> SPACE
+                    >> libraryref_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+
+            viewref_section    
+                = LEFT_PARAN
+                    >> SPACE
+                    >> VIEWREF [PrintTag()]
+                    >> SPACE
+                    >> section_name [PrintStr()]
+                    >> SPACE
+                    >> cellref_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+                            
+      
+            instance_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> INSTANCE [PrintTag()]
+                    >> SPACE
+                    >> section_name [PrintStr()]
+                    >> SPACE
+                    >> viewref_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+
+            connection_type
+                = JOINED | MUSTJOIN | CRITICALSIGNAL;
+
+            module_port
+                = LEFT_PARAN
+                    >> SPACE
+                    >> PORTREF [PrintTag()]
+                    >> SPACE
+                    >> only_string [PrintStr()]
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+    
+            instanceref_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> INSTANCEREF [PrintTag()]
+                    >> SPACE
+                    >> only_string [PrintStr()]
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+                
+            instance_con
+                = LEFT_PARAN
+                    >> SPACE
+                    >> PORTREF [PrintStr()]
+                    >> SPACE
+                    >> section_name [PrintStr()]
+                    >> SPACE 
+                    >> instanceref_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+ 
+            connections
+                = module_port  
+                  | instance_con;
+
+            routing_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> connection_type [PrintStr()]
+                    >> *(SPACE >> connections)
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+
+
+            net_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> NET  [PrintTag()]
+                    >> SPACE
+                    >> section_name [PrintStr()]
+                    >> SPACE
+                    >> routing_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+     
+            contents_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> CONTENTS [PrintTag()]
+                    >> *(SPACE >> instance_section)
+                    >> *(SPACE >> net_section)
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ; 
 
             view_section
                 = LEFT_PARAN
@@ -270,6 +398,8 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> viewtype_section
                     >> SPACE
                     >> interface_section
+                    >> SPACE
+                    >> contents_section
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
@@ -337,6 +467,9 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         
         strlit<> INTERFACE, PORT, DIRECTION, INPUT, OUTPUT, INOUT;
 
+        strlit<> CONTENTS, INSTANCE, VIEWREF, CELLREF, LIBRARYREF,
+                 NET, JOINED, MUSTJOIN, CRITICALSIGNAL, PORTREF, INSTANCEREF;
+
         rule<ScannerT>  top;
 
         rule<ScannerT> 
@@ -348,10 +481,16 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
 
         rule<ScannerT>
                 cell_section, celltype_section, celltypesec_name, view_section, viewtype_section,
-                viewtype_name, interface_section, port_section, direction_section, direction_str;
+                viewtype_name, interface_section, port_section, direction_section, direction_str,
+                contents_section, instance_section, viewref_section, cellref_section;
+
+        rule<ScannerT>
+                libraryref_section, net_section, routing_section, connections,
+                connection_type, module_port_ref, instance_con, module_port, instanceref_section;
  
         rule<ScannerT>
-               any_string, string_val, alnum_name; 
+               any_string, string_val, alnum_name, string_without_right_paran,
+               only_string ; 
         
         rule<ScannerT> SPACE, LEFT_BRACE, RIGHT_BRACE, LEFT_PARAN, RIGHT_PARAN;
         rule<ScannerT> const&
@@ -376,7 +515,7 @@ EDIFReader::Read(string fileName)
 
     skip_grammar skip;
     string to_parse(start, end);
-    std::cout << "String to parse:" << std::endl << to_parse << std::endl;
+    //std::cout << "String to parse:" << std::endl << to_parse << std::endl;
     
     parse_info<vector<char>::const_iterator> result = parse(start, end, g, skip);
 
@@ -387,7 +526,8 @@ EDIFReader::Read(string fileName)
         return true;
     }  else {
         std::cout << "Parsing Error:";
-        for (int i = 0; i < 50; i++)
+        //for (int i = 0; i < 50; i++)
+        while (1)
         {
             if (result.stop == end) {
                 break;
@@ -398,5 +538,3 @@ EDIFReader::Read(string fileName)
         return false;
     }
 }
-
-
