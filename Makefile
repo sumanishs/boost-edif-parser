@@ -1,6 +1,6 @@
 CC=g++
 IPATHS=-I. -I/home/sumanish/Boost_1.68/boost_1_68_0 
-CFLAGS=-g
+CFLAGS=-g -w
 LPATHS=-L/home/sumanish/Boost_1.68/boost_1_68_0/stage/lib
 LFLAGS=
 DEPS = EDIFReader.hpp	\
