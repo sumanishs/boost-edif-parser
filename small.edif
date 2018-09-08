@@ -15,39 +15,61 @@
      (port A3 (direction INPUT))
      (port Z  (direction OUTPUT))
     )
-    (contents
-     
-    (instance U1
-      (viewRef Netlist_representation 
-       (cellRef xo02d1 (libraryRef generic_gates))
-      )
+   )
+  )
+  (cell or03d1 (cellType GENERIC)
+   (view Netlist_representation (viewType NETLIST)
+    (interface 
+     (port A1 (direction INPUT)) 
+     (port A2 (direction INPUT))
+     (port A3 (direction INPUT))
+     (port Z  (direction OUTPUT))
+    )
+   )
+  )
+  )
+  (library DESIGNS (edifLevel 0) (technology (numberDefinition))
+   (cell full_adder (cellType GENERIC)
+    (view Netlist_representation (viewType NETLIST)
+     (interface 
+      (port A  (direction INPUT))
+      (port B  (direction INPUT))
+      (port CI (direction INPUT))
+      (port S  (direction OUTPUT))
+      (port CO (direction OUTPUT))
      )
 
-     (instance U2
-      (viewRef Netlist_representation 
-       (cellRef xo02d1 (libraryRef generic_gates))
-      )
-     )
+     (contents
 
-     (net A
+      (instance U1
+       (viewRef Netlist_representation 
+        (cellRef xo02d1 (libraryRef generic_gates))
+       )
+      )
+      (instance U2
+       (viewRef Netlist_representation 
+        (cellRef xo02d1 (libraryRef generic_gates))
+       )
+      )
+      (net A
        (joined 
         (portRef A) 
-        (portRef B) 
         (portRef A1 (instanceRef U1))
         (portRef A1 (instanceRef U3))
         (portRef A1 (instanceRef U4))
        )
-     )
-     
-     (net NET1
+      )
+
+      (net B
        (joined 
-        (portRef Z (instanceRef U1))
-        (portRef A1 (instanceRef U2))
+        (portRef B) 
+        (portRef A2 (instanceRef U1))
+        (portRef A2 (instanceRef U3))
+        (portRef A1 (instanceRef U5))
        )
+      )
      )
-     
     )
    )
-  )
- )
+  )   
 )

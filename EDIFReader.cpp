@@ -47,7 +47,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         INPUT("INPUT"), OUTPUT("OUTPUT"), INOUT("INOUT"), CONTENTS("contents"), INSTANCE("instance"), 
         VIEWREF("viewRef"), CELLREF("cellRef"), LIBRARYREF("libraryRef"),
         NET("net"), JOINED("joined"), MUSTJOIN("mustjoin"), CRITICALSIGNAL("criticalsignal"),
-        PORTREF("portRef"), INSTANCEREF("instanceRef") 
+        PORTREF("portRef"), INSTANCEREF("instanceRef"), LIBRARY("library") 
         {
             using namespace phoenix;
             LEFT_BRACE  =   ch_p('{') [PrintChar()];
@@ -398,8 +398,8 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> viewtype_section
                     >> SPACE
                     >> interface_section
-                    >> SPACE
-                    >> contents_section
+                    >> *(SPACE
+                    >> contents_section)
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
@@ -433,7 +433,24 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> *(SPACE >> cell_section)
                     >> SPACE
                     >> RIGHT_PARAN
-                    ; 
+                    ;
+
+            library_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> LIBRARY [PrintTag()]
+                    >> SPACE
+                    >> only_string [PrintStr()]
+                    >> SPACE
+                    >> ediflevel_section
+                    >> SPACE
+                    >> technolgy_section
+                    >> SPACE
+                    >> cell_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+                     
             
             edif_section
                 =   LEFT_PARAN
@@ -450,6 +467,8 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> status_section
                     >> SPACE
                     >> external_section
+                    >> SPACE
+                    >> library_section
                     >> SPACE 
 					>> RIGHT_PARAN
                     ;
@@ -470,6 +489,8 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         strlit<> CONTENTS, INSTANCE, VIEWREF, CELLREF, LIBRARYREF,
                  NET, JOINED, MUSTJOIN, CRITICALSIGNAL, PORTREF, INSTANCEREF;
 
+        strlit<> LIBRARY;
+
         rule<ScannerT>  top;
 
         rule<ScannerT> 
@@ -486,7 +507,8 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
 
         rule<ScannerT>
                 libraryref_section, net_section, routing_section, connections,
-                connection_type, module_port_ref, instance_con, module_port, instanceref_section;
+                connection_type, module_port_ref, instance_con, module_port, instanceref_section,
+                library_section;
  
         rule<ScannerT>
                any_string, string_val, alnum_name, string_without_right_paran,
