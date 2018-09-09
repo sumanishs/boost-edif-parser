@@ -56,12 +56,17 @@ struct PrintTag {
 struct PrintChar {
     void operator () (char c) const
     {
-        if(c == '(')
-            cout << endl;
         cout << c;
-        if(c == ')')
-            cout << endl;
     }
     PrintChar() {}
+
+};
+
+struct PrintNewLine {
+    void operator () (ConstCharIter start, ConstCharIter end) const
+    {
+        cout << "\n";
+    }
+    PrintNewLine() {}
 
 };
