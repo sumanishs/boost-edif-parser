@@ -47,14 +47,15 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         TIMESTAMP("timeStamp"), PROGRAM("program"), PROGVERSION1("Version"), PROGVERSION2("version"), DATAORIGIN("dataOrigin"),
         AUTHOR("author"), KEYWORDMAP("keywordMap"), KEYWORDLEVEL("keywordLevel"), 
         EXTERNAL("external"), TECHNOLOGY("technology"), NUMBERDEFINITION("numberDefinition"),
-        CELL("cell"), CELLTYPE("cellType"), GENERIC("GENERIC"), TIE("TIE"), RIPPER("RIPPER"), VIEW("view"), 
+        CELL("cell"), CELLTYPE("cellType"), GENERICUp("GENERIC"), GENERICLow("generic"), TIE("TIE"), RIPPER("RIPPER"), VIEW("view"), 
         VIEWTYPE("viewType"), BEHAVIOR("BEHAVIOR"), DOCUMENT("DOCUMENT"), GRAPHIC("GRAPHIC"), LOGICMODEL("LOGICMODEL"), 
-        MASKLAYOUT("MASKLAYOUT"), NETLIST("NETLIST"), PCBLAYOUT("PCBLAYOUT"), SCHEMATIC("SCHEMATIC"), 
+        MASKLAYOUT("MASKLAYOUT"), NETLISTUp("NETLIST"), NETLISTLow("netlist"), PCBLAYOUT("PCBLAYOUT"), SCHEMATIC("SCHEMATIC"), 
         STRANGER("STRANGER"), SYMBOLIC("SYMBOLIC"), INTERFACE("interface"), PORT("port"), DIRECTION("direction"),
         INPUT("INPUT"), OUTPUT("OUTPUT"), INOUT("INOUT"), CONTENTS("contents"), INSTANCE("instance"), 
         VIEWREF("viewRef"), CELLREF("cellRef"), LIBRARYREF("libraryRef"),
         NET("net"), JOINED("joined"), MUSTJOIN("mustjoin"), CRITICALSIGNAL("criticalsignal"),
-        PORTREF("portRef"), INSTANCEREF("instanceRef"), LIBRARY("library"), DESIGN("design") 
+        PORTREF("portRef"), INSTANCEREF("instanceRef"), LIBRARY("library"), DESIGN("design"),
+        SCALE("scale"), UNIT("unit"), PROPERTY("property"), INTEGER("integer"), STRING("string") 
         {
             using namespace phoenix;
             LEFT_BRACE      =   ch_p('{') [PrintChar()];
@@ -101,7 +102,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> SPACE
                     >> (PROGVERSION1|PROGVERSION2) [PrintTag()]
                     >> SPACE
-                    >> any_string [PrintStr()]
+                    >> any_string 
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
@@ -192,19 +193,57 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                 = *(anychar_p - ch_p(')') - space_p) ;
 
             celltypesec_name
-                = GENERIC|TIE|RIPPER;
+                = GENERICUp|GENERICLow|TIE|RIPPER;
  
             viewtype_name
                 = BEHAVIOR|DOCUMENT|GRAPHIC|LOGICMODEL|MASKLAYOUT
-                      |NETLIST|PCBLAYOUT|SCHEMATIC|STRANGER|SYMBOLIC;
+                      |NETLISTUp|NETLISTLow|PCBLAYOUT|SCHEMATIC|STRANGER|SYMBOLIC;
 
             alnum_name
                 = *alnum_p ;
+
+            scalefactor_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> alpha_p [PrintChar()]
+                    >> SPACE
+                    >> int_p [PrintInteger()]
+                    >> SPACE
+                    >> int_p [PrintInteger()]
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+
+            scaleunit_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> UNIT [PrintTag()]
+                    >> SPACE
+                    >> string_without_right_paran [PrintStr()]
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+
+            scale_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> SCALE [PrintTag()]
+                    >> SPACE
+                    >> int_p [PrintInteger()]
+                    >> SPACE
+                    >> scalefactor_section
+                    >> SPACE
+                    >> scaleunit_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;    
 
             numberdefinition_section
                 = LEFT_PARAN
                     >> SPACE
                     >> NUMBERDEFINITION [PrintTag()]
+                    >> SPACE
+                    >> scale_section
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
@@ -263,12 +302,50 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
+
+            integerval_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> INTEGER [PrintTag()]
+                    >> SPACE
+                    >> int_p [PrintInteger()]
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
+
+            stringval_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> STRING [PrintTag()]
+                    >> SPACE
+                    >> any_string 
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ; 
+
+            propertyval_section
+                = integerval_section | stringval_section; 
+
+            property_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> PROPERTY [PrintTag()]
+                    >> SPACE
+                    >> section_name [PrintStr()]
+                    >> SPACE
+                    >> propertyval_section
+                    >> SPACE
+                    >> RIGHT_PARAN
+                    ;
             
+            ifcontent_section
+                = port_section | property_section;
+
             interface_section
                 = LEFT_PARAN
                     >> SPACE
                     >> INTERFACE [PrintTag()]
-                    >> *(SPACE >> port_section)
+                    >> *(SPACE >> ifcontent_section)
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
@@ -429,8 +506,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> ediflevel_section
                     >> SPACE
                     >> technolgy_section
-                    >> SPACE
-                    >> cell_section
+                    >> *(SPACE >> cell_section)
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
@@ -474,17 +550,17 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
 
         strlit<> EDIF, EDIFVERSION, EDIFLEVEL, STATUS, WRITTEN, TIMESTAMP, PROGRAM, PROGVERSION1, PROGVERSION2,
                   DATAORIGIN, AUTHOR, KEYWORDMAP, KEYWORDLEVEL, EXTERNAL, TECHNOLOGY, NUMBERDEFINITION,
-                  CELL, CELLTYPE, GENERIC, TIE, RIPPER;
+                  CELL, CELLTYPE, GENERICUp, GENERICLow, TIE, RIPPER;
         
         strlit<> VIEW, VIEWTYPE, BEHAVIOR, DOCUMENT, GRAPHIC, LOGICMODEL, MASKLAYOUT,
-                 NETLIST, PCBLAYOUT, SCHEMATIC, STRANGER, SYMBOLIC;
+                 NETLISTUp, NETLISTLow, PCBLAYOUT, SCHEMATIC, STRANGER, SYMBOLIC;
         
         strlit<> INTERFACE, PORT, DIRECTION, INPUT, OUTPUT, INOUT;
 
         strlit<> CONTENTS, INSTANCE, VIEWREF, CELLREF, LIBRARYREF,
                  NET, JOINED, MUSTJOIN, CRITICALSIGNAL, PORTREF, INSTANCEREF;
 
-        strlit<> LIBRARY, DESIGN;
+        strlit<> LIBRARY, DESIGN, SCALE, UNIT, PROPERTY, INTEGER, STRING;
 
         rule<ScannerT>  top;
 
@@ -497,21 +573,24 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
 
         rule<ScannerT>
                 cell_section, celltype_section, celltypesec_name, view_section, viewtype_section,
-                viewtype_name, interface_section, port_section, direction_section, direction_str,
+                viewtype_name,  direction_section, direction_str,
                 contents_section, instance_section, viewref_section, cellref_section;
 
         rule<ScannerT>
                 libraryref_section, net_section, routing_section, connections,
                 connection_type, module_port_ref, instance_con, module_port, instanceref_section,
-                library_section, design_section;
- 
+                library_section, design_section, scale_section, scalefactor_section, scaleunit_section;
+
+        rule<ScannerT> 
+                interface_section, ifcontent_section, port_section, property_section, propertyval_section,
+                integerval_section, stringval_section;
+
         rule<ScannerT>
                any_string, string_val, alnum_name, string_without_right_paran,
                only_string ; 
         
         rule<ScannerT> SPACE, LEFT_BRACE, RIGHT_BRACE, LEFT_PARAN, RIGHT_PARAN;
-        rule<ScannerT> const&
-        start() const { return top; }
+        rule<ScannerT> const& start() const { return top; }
     };
 };
 
