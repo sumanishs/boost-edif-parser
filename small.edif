@@ -7,7 +7,7 @@
   )
  )
  (external generic_gates (edifLevel 0) (technology (numberDefinition))
-  (cell or03d1 (cellType GENERIC)
+  (cell or05d5 (cellType GENERIC)
    (view Netlist_representation (viewType NETLIST)
     (interface 
      (port A1 (direction INPUT)) 

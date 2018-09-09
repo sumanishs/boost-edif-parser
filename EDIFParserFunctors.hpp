@@ -1,3 +1,11 @@
+/**********************************************************************/
+/* Author: Sumanish <sumanish.cse.jgec@gmail.com>                     */
+/* Modified By: Sumanish <sumanish.cse.jgec@gmail.com>                */
+/*                                                                    */  
+/* This source code can be downloaded, use, modify, distribute        */
+/* freely with this headed intact. Please don't delete this header.   */
+/**********************************************************************/ 
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -13,7 +21,7 @@ typedef std::vector<char>::iterator         CharIter;
 struct PrintInteger {
     void operator () (const int& arg) const 
     {
-		cout << arg ;
+		cout << " " << arg ;
     }
     PrintInteger() {}
 };  
@@ -22,7 +30,7 @@ struct  PrintStr {
     void operator () (ConstCharIter start, ConstCharIter end) const 
     {
     std::string s(start, end);
-    cout << s;
+    cout << " " << s;
     }
     PrintStr() {}
 };
@@ -31,7 +39,7 @@ struct  PrintStrLit {
     void operator () (ConstCharIter start, ConstCharIter end) const 
     {
     std::string s(start, end);
-    cout << "\"" << s << "\"";
+    cout << " " << "\"" << s << "\"";
     }
     PrintStrLit() {}
 };
@@ -40,7 +48,7 @@ struct PrintTag {
     void operator () (ConstCharIter start, ConstCharIter end) const 
     {
     std::string s(start, end);
-    cout << s;
+    cout << " " << s;
     }
     PrintTag() {}
 };
@@ -48,7 +56,11 @@ struct PrintTag {
 struct PrintChar {
     void operator () (char c) const
     {
+        if(c == '(')
+            cout << endl;
         cout << c;
+        if(c == ')')
+            cout << endl;
     }
     PrintChar() {}
 

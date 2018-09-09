@@ -1,9 +1,16 @@
+/**********************************************************************/
+/* Author: Sumanish <sumanish.cse.jgec@gmail.com>                     */
+/* Modified By: Sumanish <sumanish.cse.jgec@gmail.com>                */
+/*                                                                    */  
+/* This source code can be downloaded, use, modify, distribute        */
+/* freely with this headed intact. Please don't delete this header.   */
+/**********************************************************************/ 
+
 #include "EDIFReader.hpp"
 #include <boost/bind.hpp>
 #include "EDIFParserFunctors.hpp"
-//
-//  This grammar contains the matter that is to be skipped by parser.
-//
+
+//  Skip parser
 struct skip_grammar : public grammar<skip_grammar>
 {
     template <typename ScannerT>
@@ -27,7 +34,7 @@ struct skip_grammar : public grammar<skip_grammar>
 };
 
 
-
+//EDIF grammar
 struct edif_grammar : public boost::spirit::grammar<edif_grammar>
 {
     
@@ -37,7 +44,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
 
         definition(edif_grammar const& self ) : EDIF("edif"),
         EDIFVERSION("edifVersion"), EDIFLEVEL("edifLevel"), STATUS("status"), WRITTEN("written"),
-        TIMESTAMP("timeStamp"), PROGRAM("program"), PROGVERSION("Version"), DATAORIGIN("dataOrigin"),
+        TIMESTAMP("timeStamp"), PROGRAM("program"), PROGVERSION1("Version"), PROGVERSION2("version"), DATAORIGIN("dataOrigin"),
         AUTHOR("author"), KEYWORDMAP("keywordMap"), KEYWORDLEVEL("keywordLevel"), 
         EXTERNAL("external"), TECHNOLOGY("technology"), NUMBERDEFINITION("numberDefinition"),
         CELL("cell"), CELLTYPE("cellType"), GENERIC("GENERIC"), TIE("TIE"), RIPPER("RIPPER"), VIEW("view"), 
@@ -50,17 +57,18 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         PORTREF("portRef"), INSTANCEREF("instanceRef"), LIBRARY("library"), DESIGN("design") 
         {
             using namespace phoenix;
-            LEFT_BRACE  =   ch_p('{') [PrintChar()];
-            RIGHT_BRACE =   ch_p('}') [PrintChar()];
-            LEFT_PARAN  =   ch_p('(') [PrintChar()];
-            RIGHT_PARAN  =   ch_p(')') [PrintChar()];
-			SPACE		= *space_p [PrintChar()];
-            any_string  = ch_p('"') 
-                          >> string_val [PrintStrLit()]
-                          >> ch_p('"')
-                          ;
+            LEFT_BRACE      =   ch_p('{') [PrintChar()];
+            RIGHT_BRACE     =   ch_p('}') [PrintChar()];
+            LEFT_PARAN      =   ch_p('(') [PrintChar()];
+            RIGHT_PARAN     =   ch_p(')') [PrintChar()];
+			SPACE		    = *space_p ; //[PrintChar()];
+            any_string      = ch_p('"') 
+                                >> string_val [PrintStrLit()]
+                                >> ch_p('"')
+                                ;
 
-            string_val = *(anychar_p - ch_p('"'));
+            string_val 
+                = *(anychar_p - ch_p('"'));
 
             edifversion_section
                 = LEFT_PARAN
@@ -91,7 +99,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
             programversion_section
                 = LEFT_PARAN
                     >> SPACE
-                    >> PROGVERSION [PrintTag()]
+                    >> (PROGVERSION1|PROGVERSION2) [PrintTag()]
                     >> SPACE
                     >> any_string [PrintStr()]
                     >> SPACE
@@ -138,10 +146,8 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> timestamp_section
                     >> SPACE
                     >> program_section
-                    >> SPACE
-                    >> dataorigin_setion
-                    >> SPACE
-                    >> author_section
+                    >> *(SPACE >> dataorigin_setion)
+                    >> *(SPACE >> author_section)
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
@@ -177,27 +183,23 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     ;
 
             section_name 
-                = *(anychar_p - space_p)
-                    ;
+                = *(anychar_p - space_p) ;
 
             string_without_right_paran
-                = *(anychar_p - ch_p(')'))
-                    ;
+                = *(anychar_p - ch_p(')')) ;
             
             only_string
-                = *(anychar_p - ch_p(')') - space_p)
-                    ;
+                = *(anychar_p - ch_p(')') - space_p) ;
 
             celltypesec_name
-                    = GENERIC|TIE|RIPPER;
+                = GENERIC|TIE|RIPPER;
  
             viewtype_name
-                    = BEHAVIOR|DOCUMENT|GRAPHIC|LOGICMODEL|MASKLAYOUT
+                = BEHAVIOR|DOCUMENT|GRAPHIC|LOGICMODEL|MASKLAYOUT
                       |NETLIST|PCBLAYOUT|SCHEMATIC|STRANGER|SYMBOLIC;
 
             alnum_name
-                = *alnum_p
-                    ;
+                = *alnum_p ;
 
             numberdefinition_section
                 = LEFT_PARAN
@@ -268,7 +270,8 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> INTERFACE [PrintTag()]
                     >> *(SPACE >> port_section)
                     >> SPACE
-                    >> RIGHT_PARAN;
+                    >> RIGHT_PARAN
+                    ;
 
             libraryref_section
                 = LEFT_PARAN
@@ -304,7 +307,6 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> RIGHT_PARAN
                     ;
                             
-      
             instance_section
                 = LEFT_PARAN
                     >> SPACE
@@ -320,16 +322,6 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
             connection_type
                 = JOINED | MUSTJOIN | CRITICALSIGNAL;
 
-            module_port
-                = LEFT_PARAN
-                    >> SPACE
-                    >> PORTREF [PrintTag()]
-                    >> SPACE
-                    >> only_string [PrintStr()]
-                    >> SPACE
-                    >> RIGHT_PARAN
-                    ;
-    
             instanceref_section
                 = LEFT_PARAN
                     >> SPACE
@@ -340,22 +332,17 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> RIGHT_PARAN
                     ;
                 
-            instance_con
+            connections
                 = LEFT_PARAN
                     >> SPACE
-                    >> PORTREF [PrintStr()]
+                    >> PORTREF [PrintTag()]
                     >> SPACE
-                    >> section_name [PrintStr()]
-                    >> SPACE 
-                    >> instanceref_section
+                    >> only_string [PrintStr()]
+                    >> *(SPACE >> instanceref_section)
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
- 
-            connections
-                = module_port  
-                  | instance_con;
-
+    
             routing_section
                 = LEFT_PARAN
                     >> SPACE
@@ -364,7 +351,6 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
-
 
             net_section
                 = LEFT_PARAN
@@ -398,13 +384,11 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> viewtype_section
                     >> SPACE
                     >> interface_section
-                    >> *(SPACE
-                    >> contents_section)
+                    >> *(SPACE >> contents_section)
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
                     
-
             cell_section
                 = LEFT_PARAN
                     >> SPACE
@@ -477,12 +461,9 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> keyword_section
                     >> SPACE
                     >> status_section
-                    >> SPACE
-                    >> external_section
-                    >> SPACE
-                    >> library_section
-                    >> SPACE
-                    >> design_section
+                    >> *(SPACE >> external_section)
+                    >> SPACE >> library_section
+                    >> *(SPACE >> design_section)
                     >> SPACE 
 					>> RIGHT_PARAN
                     ;
@@ -491,7 +472,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                    >> end_p ;
         }
 
-        strlit<> EDIF, EDIFVERSION, EDIFLEVEL, STATUS, WRITTEN, TIMESTAMP, PROGRAM, PROGVERSION,
+        strlit<> EDIF, EDIFVERSION, EDIFLEVEL, STATUS, WRITTEN, TIMESTAMP, PROGRAM, PROGVERSION1, PROGVERSION2,
                   DATAORIGIN, AUTHOR, KEYWORDMAP, KEYWORDLEVEL, EXTERNAL, TECHNOLOGY, NUMBERDEFINITION,
                   CELL, CELLTYPE, GENERIC, TIE, RIPPER;
         
@@ -541,7 +522,7 @@ EDIFReader::Read(string fileName)
     ifstream in(fileName.c_str());
     if (!in)
         return false;
-    in.unsetf(ios::skipws); //  Turn off white space skipping on the stream
+    in.unsetf(ios::skipws); //Switch off white space skipping on the stream
 
     CharList vec;
     std::copy(istream_iterator<char>(in), istream_iterator<char>(), std::back_inserter(vec));
