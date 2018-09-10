@@ -1,10 +1,10 @@
-/**********************************************************************/
-/* Author: Sumanish <sumanish.cse.jgec@gmail.com>                     */
-/* Modified By: Sumanish <sumanish.cse.jgec@gmail.com>                */
-/*                                                                    */  
-/* This source code can be downloaded, use, modify, distribute        */
-/* freely with this headed intact. Please don't delete this header.   */
-/**********************************************************************/ 
+######################################################################## 
+## Author: Sumanish <sumanish.cse.jgec@gmail.com>                     ## 
+## Modified By: Sumanish <sumanish.cse.jgec@gmail.com>                ## 
+##                                                                    ##  
+## This source code can be downloaded, use, modify, distribute        ## 
+## freely with this header intact. Please don't delete this header.   ## 
+######################################################################## 
 
 EDIF Parser
 A simple EDIF file parser using Boost. It just parses and prints.
