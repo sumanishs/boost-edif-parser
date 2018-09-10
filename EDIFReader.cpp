@@ -57,7 +57,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         VIEWREF("viewRef"), CELLREF("cellRef"), LIBRARYREF("libraryRef"),
         NET("net"), JOINED("joined"), MUSTJOIN("mustjoin"), CRITICALSIGNAL("criticalsignal"),
         PORTREF("portRef"), INSTANCEREF("instanceRef"), LIBRARY("library"), DESIGN("design"),
-        SCALE("scale"), UNIT("unit"), PROPERTY("property"), INTEGER("integer"), STRING("string"),
+        SCALE("scale"), UNIT("unit"), PROPERTY("property"), INTEGER("integer"), STRING("string"), OWNER("owner"),
         RENAME("rename") 
         {
             using namespace phoenix;
@@ -336,14 +336,22 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                 = LEFT_PARAN
                     >> SPACE
                     >> STRING [PrintTag()]
+                    >> *(SPACE >> any_string) 
                     >> SPACE
-                    >> any_string 
+                    >> RIGHT_PARAN
+                    ; 
+            
+            owner_section
+                = LEFT_PARAN
+                    >> SPACE
+                    >> OWNER [PrintTag()]
+                    >> *(SPACE >> any_string) 
                     >> SPACE
                     >> RIGHT_PARAN
                     ; 
 
             propertyval_section
-                = integerval_section | stringval_section; 
+                = integerval_section | stringval_section | owner_section; 
 
             property_section
                 = LEFT_PARAN
@@ -351,8 +359,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> PROPERTY [PrintTag()]
                     >> SPACE
                     >> section_name [PrintStr()]
-                    >> SPACE
-                    >> propertyval_section
+                    >> +(SPACE >> propertyval_section)
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
@@ -410,6 +417,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> section_name_or_rename
                     >> SPACE
                     >> viewref_section
+                    >> *(SPACE >> property_section)
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
@@ -491,7 +499,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> SPACE
                     >> CELL [PrintTag()]
                     >> SPACE
-                    >> section_name [PrintStr()]
+                    >> section_name_or_rename
                     >> SPACE
                     >> celltype_section
                     >> SPACE
@@ -536,9 +544,10 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                     >> SPACE
                     >> DESIGN [PrintTag()]
                     >> SPACE
-                    >> only_string [PrintStr()]
+                    >> section_name_or_rename
                     >> SPACE
                     >> cellref_section
+                    >> *(SPACE >> property_section)
                     >> SPACE
                     >> RIGHT_PARAN
                     ;
@@ -548,17 +557,16 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
                 =   LEFT_PARAN
                     >> EDIF	[PrintTag()] 
 					>> SPACE 
-					>> section_name [PrintStr()]
+					>> section_name_or_rename
                     >> SPACE 
 					>> edifversion_section
                     >> SPACE
                     >> ediflevel_section
                     >> SPACE
                     >> keyword_section
-                    >> SPACE
-                    >> status_section
+                    >> *(SPACE >> status_section)
                     >> *(SPACE >> external_section)
-                    >> SPACE >> library_section
+                    >> *(SPACE >> library_section)
                     >> *(SPACE >> design_section)
                     >> SPACE 
 					>> RIGHT_PARAN
@@ -580,7 +588,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
         strlit<> CONTENTS, INSTANCE, VIEWREF, CELLREF, LIBRARYREF,
                  NET, JOINED, MUSTJOIN, CRITICALSIGNAL, PORTREF, INSTANCEREF;
 
-        strlit<> LIBRARY, DESIGN, SCALE, UNIT, PROPERTY, INTEGER, STRING, RENAME;
+        strlit<> LIBRARY, DESIGN, SCALE, UNIT, PROPERTY, INTEGER, STRING, RENAME, OWNER;
 
         rule<ScannerT>  top;
 
@@ -603,7 +611,7 @@ struct edif_grammar : public boost::spirit::grammar<edif_grammar>
 
         rule<ScannerT> 
                 interface_section, ifcontent_section, port_section, property_section, propertyval_section,
-                integerval_section, stringval_section, rename_section, section_name_or_rename;
+                integerval_section, stringval_section, rename_section, section_name_or_rename, owner_section;
 
         rule<ScannerT>
                any_string, string_val, alnum_name, string_without_right_paran,

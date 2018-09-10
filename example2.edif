@@ -1,0 +1,59 @@
+(edif (rename and "AND")
+  (edifVersion 2 0 0)
+  (edifLevel 0)
+  (keywordMap (keywordLevel  0))
+    (library VIRTEX (edifLevel 0) (technology (numberDefinition))
+        (cell LUT2 (cellType GENERIC)
+            (view PRIM (viewType NETLIST)
+              (interface 
+                (port I0 (direction INPUT))
+                (port I1 (direction INPUT))
+                (port O (direction OUTPUT))
+              )
+            )
+        )
+    )
+    (library work (edifLevel 0) (technology (numberDefinition))
+        (cell (rename and "AND") (cellType GENERIC)
+            (view verilog
+              (viewType NETLIST)
+              (interface 
+                (port i0
+                  (direction INPUT)
+                )
+                (port i1
+                  (direction INPUT)
+                )
+                (port o
+                  (direction OUTPUT)
+                )
+              )
+              (contents 
+                (instance icfcd208495d565ef66e7dff9f98764da
+                  (viewRef PRIM (cellRef LUT2 (libraryRef VIRTEX)))
+                    (property INIT (string ))
+                )
+                (net ic4ca4238a0b923820dcc509a6f75849b
+                  (joined 
+                    (portRef i0)
+                    (portRef I0 (instanceRef icfcd208495d565ef66e7dff9f98764da))
+                  )
+                )
+                (net ic81e728d9d4c2f636f067f89cc14862c
+                  (joined 
+                    (portRef i1)
+                    (portRef I1 (instanceRef icfcd208495d565ef66e7dff9f98764da))
+                  )
+                )
+                (net ieccbc87e4b5ce2fe28308fd9f2a7baf3
+                  (joined 
+                    (portRef o)
+                    (portRef O (instanceRef icfcd208495d565ef66e7dff9f98764da))
+                  )
+                )
+              )
+            )
+        )
+    )
+    (design (rename and "AND") (cellRef and (libraryRef work)) (property PART (string "xc5vlx30ff324-1") (owner "Xilinx")))
+)
